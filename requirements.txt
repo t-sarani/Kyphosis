@@ -1,0 +1,7 @@
+# بارگذاری کتابخانههای مورد نیاز
+library(rpart)
+library(fpc)
+library(cluster)
+library(randomForest)
+library(fmsb)
+library(MASS)
