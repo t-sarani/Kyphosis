@@ -67,7 +67,7 @@ plot(x) # Visualize Random Forest
 
 Random Forest Plot
 
-  <!-- Replace with actual path -->
+![Random Forest](imagerandom_forest_plot.png)
 
 
 Results
