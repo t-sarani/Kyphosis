@@ -1,0 +1,156 @@
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix, classification_report
+from scipy.stats import shapiro
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# بارگذاری دادهها
+file_path = r'C:\Users\USER\Desktop\data mining.git\python\data-Kyphosis .csv'
+data = pd.read_csv(file_path)
+print(data)
+
+# پیشپردازش دادهها
+data['Kyphosis'] = data['Kyphosis'].map({'absent': 0, 'present': 1})
+
+# بررسی نرمال بودن دادهها
+print(shapiro(data['Age']))
+print(shapiro(data['Number']))
+print(shapiro(data['start']))
+
+# نرمالسازی دادهها با استفاده از تبدیل log
+data['Age'] = np.log(data['Age'] + 1)
+data['Number'] = np.log(data['Number'] + 1)
+data['start'] = np.log(data['start'] + 1)
+
+# خوشهبندی K-means
+kmeans = KMeans(n_clusters=3, random_state=123)
+data['Cluster'] = kmeans.fit_predict(data[['Age', 'Number', 'start']])
+print(data['Cluster'].value_counts())
+
+# جدول مقایسه خوشهها با Kyphosis
+print(pd.crosstab(data['Kyphosis'], data['Cluster']))
+
+# نمایش نتایج خوشهبندی
+plt.scatter(data['Age'], data['Number'], c=data['Cluster'], cmap='viridis')
+plt.xlabel('Age')
+plt.ylabel('Number')
+plt.title('K-means Clustering')
+plt.show()
+
+# خوشهبندی PAM
+from sklearn_extra.cluster import KMedoids
+
+kmedoids = KMedoids(n_clusters=3, random_state=123)
+data['PAM_Cluster'] = kmedoids.fit_predict(data[['Age', 'Number', 'start']])
+print(data['PAM_Cluster'].value_counts())
+
+# نمایش نمودار PAM
+plt.scatter(data['Age'], data['Number'], c=data['PAM_Cluster'], cmap='viridis')
+plt.xlabel('Age')
+plt.ylabel('Number')
+plt.title('PAM Clustering')
+plt.show()
+
+# خوشهبندی Hierarchical
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+Z = linkage(data[['Age', 'Number', 'start']], method='average')
+plt.figure(figsize=(10, 7))
+dendrogram(Z, labels=data['Kyphosis'].values)
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('Sample index')
+plt.ylabel('Distance')
+plt.show()
+
+# خوشهبندی DBSCAN
+from sklearn.cluster import DBSCAN
+
+dbscan = DBSCAN(eps=0.42, min_samples=5)
+data['DBSCAN_Cluster'] = dbscan.fit_predict(data[['Age', 'Number', 'start']])
+print(pd.crosstab(data['Kyphosis'], data['DBSCAN_Cluster']))
+
+# نمایش نتایج DBSCAN
+plt.scatter(data['Age'], data['Number'], c=data['DBSCAN_Cluster'], cmap='viridis')
+plt.xlabel('Age')
+plt.ylabel('Number')
+plt.title('DBSCAN Clustering')
+plt.show()
+
+# مدلسازی با درخت تصمیم
+from sklearn.model_selection import train_test_split
+
+X = data[['Age', 'Number', 'start']]
+y = data['Kyphosis']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
+dt = DecisionTreeClassifier(random_state=123)
+dt.fit(X_train, y_train)
+y_pred = dt.predict(X_test)
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+# نمایش درخت تصمیم
+from sklearn.tree import plot_tree
+
+plt.figure(figsize=(20, 10))
+plot_tree(dt, filled=True, feature_names=['Age', 'Number', 'start'], class_names=['absent', 'present'])
+plt.show()
+
+# مدلسازی جنگل تصادفی
+rf = RandomForestClassifier(n_estimators=100, random_state=5678)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+print(confusion_matrix(y_test, y_pred_rf))
+print(classification_report(y_test, y_pred_rf))
+
+import statsmodels.api as sm
+
+# مدلسازی رگرسیونی
+X = data[['Number', 'start']]
+X = sm.add_constant(X)  # اضافه کردن ثابت به مدل
+y = data['Age']
+
+model = sm.OLS(y, X).fit()
+print(model.summary())  # نمایش خلاصه مدل رگرسیونی
+
+# بررسی VIF
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# محاسبه VIF برای هر متغیر
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(len(X.columns))]
+print(vif_data)
+
+# محاسبه همبستگی
+cor_matrix = data[['Kyphosis', 'Age', 'Number', 'start']].corr()
+print(cor_matrix)
+
+# نمودارهای باقیمانده
+residuals = model.resid
+fig, ax = plt.subplots(1, 3, figsize=(18, 6))
+
+# هیستوگرام باقیماندهها
+sns.histplot(residuals, kde=True, ax=ax[0], color='lightblue')
+ax[0].set_title('Histogram of Residuals')
+
+# باکسپلات باقیماندهها
+sns.boxplot(y=residuals, ax=ax[1])
+ax[1].set_title('Boxplot of Residuals')
+
+# نمودار QQ
+sm.qqplot(residuals, line='45', ax=ax[2])
+ax[2].set_title('QQ Plot of Residuals')
+
+plt.tight_layout()
+plt.show()
+
+# آزمون شاپیرو-ویلک برای نرمال بودن باقیماندهها
+print(shapiro(residuals))
