@@ -67,7 +67,7 @@ plot(x) # Visualize Random Forest
 
 Random Forest Plot
 
-![Random Forest](imagerandom_forest_plot.png)
+![Random Forest](C:\Users\USER\Desktop\data mining.git\images\random_forest_plot.png)
 
 
 Results

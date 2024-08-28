@@ -103,6 +103,8 @@ plt.figure(figsize=(20, 10))
 plot_tree(dt, filled=True, feature_names=['Age', 'Number', 'start'], class_names=['absent', 'present'])
 plt.show()
 
+from sklearn.model_selection import train_test_split
+
 # مدلسازی جنگل تصادفی
 rf = RandomForestClassifier(n_estimators=100, random_state=5678)
 rf.fit(X_train, y_train)
